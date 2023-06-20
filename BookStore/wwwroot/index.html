@@ -1,0 +1,252 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>BookStore</title>
+    <style>
+        td {padding:5px;}
+        button{margin: 5px;}
+    </style>
+</head>
+<body>
+<h2>Список книг</h2>
+<div>
+    <input type="hidden" id="bookId" />
+    <p>
+        Название:<br/>
+        <input id="naming" />
+    </p>
+    <p>
+        Автор:<br />
+        <input id="author" />
+    </p>
+    <p>
+        Издательство:<br />
+        <input id="publishingHouse" />
+    </p>
+    <p>
+        Год:<br />
+        <input id="year"  type="number"/>
+    </p>
+    <p>
+        Жанр:<br />
+        <input id="genre" />
+    </p>
+
+    <p>
+        Город публикации:<br />
+        <input id="publishLocation" />
+    </p>
+    <p>
+        Описание:<br />
+        <input id="description" />
+    </p>
+    <p>
+        <button id="saveBtn">Сохранить</button>
+        <button id="resetBtn">Сбросить</button>
+    </p>
+</div>
+<table>
+    <thead><tr><th>ID</th><th>Название</th><th>Автор</th><th>Год</th><th>Жанр</th><th>Издательство</th><th>Город</th></tr></thead>
+    <tbody>
+    </tbody>
+</table>
+
+<script>
+    // Получение всех книг
+    async function getBooks() {
+        // отправляет запрос и получаем ответ
+        const response = await fetch("http://localhost:5005/api/books", {
+            method: "GET",
+            headers: { "Accept": "application/json"}
+        });
+        // если запрос прошел нормально
+        if (response.ok === true) {
+            // получаем данные
+            const books = await response.json();
+            const rows = document.querySelector("tbody");
+            // добавляем полученные элементы в таблицу
+            books.forEach(book => rows.append(row(book)));
+        }
+    }
+   
+
+    // Добавление книги
+    async function createBook(naming, author, year, genre, publishingHouse, publishLocation, description) {
+
+        const response = await fetch("http://localhost:5005/api/books", {
+            method: "POST",
+            headers: { "Accept": "application/json", "Content-Type": "application/json" },
+            body: JSON.stringify({
+                naming: naming,
+                authors: [author],
+                yearOfIssue: parseInt(year),
+                genre: genre,
+                publishingHouse: publishingHouse,
+                publishLocation: publishLocation,
+                description: description,
+            })
+        });
+        if (response.ok === true) {
+            const book = await response.json();
+            document.querySelector("tbody").append(row(book));
+        }
+        else {
+            const error = await response.json();
+            console.log(error.message);
+        }
+    }
+
+    // Изменение книги
+    async function editBook(id, naming, author, year, genre, publishingHouse, publishLocation, description) {
+        const response = await fetch("http://localhost:5005/api/books", {
+            method: "PUT",
+            headers: { "Accept": "application/json", "Content-Type": "application/json" },
+            body: JSON.stringify({
+                id: id,
+                naming: naming,
+                authors: [author],
+                yearOfIssue: parseInt(year),
+                genre: genre,
+                publishingHouse: publishingHouse,
+                publishLocation: publishLocation,
+                description: description,
+            })
+        });
+        if (response.ok === true) {
+            const book = await response.json();
+            document.querySelector(`tr[data-rowid='${book.id}']`).replaceWith(row(book));
+        }
+        else {
+            const error = await response.json();
+            console.log(error.message);
+        }
+    }
+    
+    // Получение одной книги
+    async function getBook(id) {
+        const response = await fetch(`http://localhost:5005/api/books/${id}`, {
+            method: "GET",
+            headers: { "Accept": "application/json" }
+        });
+        if (response.ok === true) {
+            const book = await response.json();
+            document.getElementById("bookId").value = book.id;
+            document.getElementById("naming").value = book.naming;
+            document.getElementById("author").value = book.authors;
+            document.getElementById("publishingHouse").value = book.publishingHouse;
+            document.getElementById("year").value = book.yearOfIssue;
+            document.getElementById("genre").value = book.genre;
+            document.getElementById("publishLocation").value = book.publishLocation;
+            document.getElementById("description").value = book.description;
+        }
+        else {
+            // если произошла ошибка, получаем сообщение об ошибке
+            const error = await response.json();
+            console.log(error.message); // и выводим его на консоль
+        }
+    }
+    // Удаление униги
+    async function deleteBook(id) {
+        const response = await fetch(`http://localhost:5005/api/books/${id}`, {
+            method: "DELETE",
+            headers: { "Accept": "application/json" }
+        });
+        if (response.ok === true) {
+            const id = await response.json();
+            document.querySelector(`tr[data-rowid='${id}']`).remove();
+        }
+        else {
+            const error = await response.json();
+            console.log(error.message);
+        }
+    }
+
+    //сброс данных формы после отправки
+    function reset() {
+        document.getElementById("bookId").value = ""
+        document.getElementById("naming").value = "";
+        document.getElementById("author").value = "";
+        document.getElementById("publishingHouse").value ="";
+        document.getElementById("year").value = "";
+        document.getElementById("genre").value = "";
+        document.getElementById("publishLocation").value = "";
+        document.getElementById("description").value = "";
+    }
+    // создание строки для таблицы
+    function row(book) {
+
+        book.Naming = undefined;
+        const tr = document.createElement("tr");
+        tr.setAttribute("data-rowid", book.id);
+
+        const idTd = document.createElement("td");
+        idTd.append(book.id);
+        tr.append(idTd);
+
+        const nameTd = document.createElement("td");
+        nameTd.append(book.naming);
+        tr.append(nameTd);
+
+        const authorTd = document.createElement("td");
+        book.authors.forEach((a) => { authorTd.append(a + " "); });
+        tr.append(authorTd);
+
+        const yearTd = document.createElement("td");
+        yearTd.append(book.yearOfIssue);
+        tr.append(yearTd);
+
+        const genreTd = document.createElement("td");
+        genreTd.append(book.genre);
+        tr.append(genreTd);
+
+        const publishHouseTd = document.createElement("td");
+        publishHouseTd.append(book.publishingHouse);
+        tr.append(publishHouseTd);
+
+        const publishLocTd = document.createElement("td");
+        publishLocTd.append(book.publishLocation);
+        tr.append(publishLocTd);
+
+        const linksTd = document.createElement("td");
+
+        const editLink = document.createElement("button");
+        editLink.append("Изменить");
+        editLink.addEventListener("click", async() => await getBook(book.id));
+        linksTd.append(editLink);
+
+        const removeLink = document.createElement("button");
+        removeLink.append("Удалить");
+        removeLink.addEventListener("click", async () => await deleteBook(book.id));
+
+        linksTd.append(removeLink);
+        tr.appendChild(linksTd);
+
+        return tr;
+    }
+    // сброс значений формы
+    document.getElementById("resetBtn").addEventListener("click", () =>  reset());
+
+     // отправка формы
+     document.getElementById("saveBtn").addEventListener("click", async () => {
+    
+        const id = document.getElementById("bookId").value;
+        const naming = document.getElementById("naming").value;
+        const author = document.getElementById("author").value.split(",");
+        const genre = document.getElementById("genre").value;
+        const year = document.getElementById("year").value;
+        const publishingHouse = document.getElementById("publishingHouse").value;
+        const publishLocation = document.getElementById("publishLocation").value;
+        const description = document.getElementById("description").value;
+         if (id === "")
+             await createBook(naming, author, year, genre, publishingHouse, publishLocation, description);
+         else
+             await editBook(id, naming, author, year, genre, publishingHouse, publishLocation, description);
+         reset();
+     });
+
+    // загрузка пользователей
+    getBooks();
+</script>
+</body>
+</html>
