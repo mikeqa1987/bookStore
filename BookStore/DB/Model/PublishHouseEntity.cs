@@ -1,5 +1,5 @@
-﻿using MessagePack;
-using Newtonsoft.Json;
+﻿using System.Text.Json.Serialization;
+using MessagePack;
 
 namespace BookStore.DB.Model;
 
